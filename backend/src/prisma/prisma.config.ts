@@ -2,9 +2,9 @@
 // Keep secrets in environment variables.
 
 const config = {
-  migrate: {
-    // Prisma Migrate reads the connection URL from this config in Prisma 7.
-    url: process.env.DATABASE_URL,
+  schema: 'src/prisma/schema.prisma',
+  datasource: {
+    url: process.env.DATABASE_URL ?? '',
   },
   // Runtime app code can use either adapter (direct DB) or accelerateUrl.
   client: {
