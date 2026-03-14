@@ -1,24 +1,18 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import prismaConfig from '../prisma/prisma.config';
 
-// Build PrismaClient options according to new Prisma guidance
-// Avoid passing `adapter` unless `driverAdapters` preview feature is enabled.
-const clientOptions: {
-  datasourceUrl?: string;
-  accelerateUrl?: string;
-} = {};
+// Build PrismaClient options using adapter or accelerateUrl per Prisma 7 guidance.
+const clientOptions: Record<string, unknown> = {};
 
-if (prismaConfig?.client?.adapter) {
-  // adapter requires preview feature; instead pass a datasourceUrl for compatibility
-  if (prismaConfig.client.adapter.url) {
-    clientOptions.datasourceUrl = prismaConfig.client.adapter.url;
-  }
+if (prismaConfig?.client?.adapter?.url) {
+  // Provide the raw connection string as `datasourceUrl` for PrismaClient.
+  clientOptions.datasourceUrl = prismaConfig.client.adapter.url as string;
 }
 
 if (prismaConfig?.client?.accelerateUrl) {
   clientOptions.accelerateUrl = prismaConfig.client.accelerateUrl;
 }
 
-const prisma = new PrismaClient(clientOptions as Prisma.PrismaClientOptions);
+const prisma = new PrismaClient(clientOptions as Prisma.Subset<Prisma.PrismaClientOptions, Prisma.PrismaClientOptions>);
 
 export default prisma;

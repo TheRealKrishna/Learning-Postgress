@@ -4,7 +4,7 @@ import { error as logError } from '../utils/logger';
 // Express error-handling middleware
 const errorHandler = (err: unknown, _req: Request, res: Response, next: NextFunction) => {
   if (res.headersSent) {
-    return next(err as any);
+    return next(err as Error);
   }
 
   // Log full error for diagnostics (stack when available)
