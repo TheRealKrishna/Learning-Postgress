@@ -1,0 +1,52 @@
+{
+	"folders": [
+		{
+			"path": "frontend"
+		},
+		{
+			"path": "backend"
+		}
+	],
+	"settings": {
+		"restoreTerminals.terminals": [
+			{
+				"splitTerminals": [
+					{
+						"name": "frontend",
+						"commands": [
+							"cd..",
+							"cd frontend",
+							"npm run dev"
+						]
+					},
+					{
+						"name": "empty",
+						"commands": [
+							"cd..",
+							"cd frontend",
+						]
+					},
+				]
+			},
+			{
+				"splitTerminals": [
+					{
+						"name": "backend",
+						"commands": [
+							"cd..",
+							"cd backend",
+							"npm run dev"
+						]
+					},
+					{
+						"name": "empty",
+						"commands": [
+							"cd..",
+							"cd backend",
+						]
+					},
+				]
+			},
+		]
+	},
+}
