@@ -1,77 +1,198 @@
 "use client";
-import { useState } from 'react';
+
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSignupMutation } from '../../features/auth/authApi';
+import { useMemo, useState } from 'react';
+import { useSignupMutation } from '@/features/auth/auth.api';
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [signup, { isLoading }] = useSignupMutation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!name || !email || !password) {
-      setError('Please fill all fields');
+  const passwordChecks = useMemo(
+    () => ({
+      minLength: password.length >= 8,
+      hasLetter: /[A-Za-z]/.test(password),
+      hasNumber: /\d/.test(password),
+    }),
+    [password]
+  );
+
+  const isPasswordStrong =
+    passwordChecks.minLength && passwordChecks.hasLetter && passwordChecks.hasNumber;
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError(null);
+
+    if (!name.trim()) {
+      setFormError('Please enter your full name.');
       return;
     }
-    if (password !== confirm) {
-      setError('Passwords do not match');
+    if (!emailRegex.test(email)) {
+      setFormError('Please enter a valid email address.');
+      return;
+    }
+    if (!isPasswordStrong) {
+      setFormError('Password must be at least 8 characters and include letters and numbers.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setFormError('Passwords do not match.');
       return;
     }
 
     try {
-      const res = await signup({ name, email, password }).unwrap();
-      // On success, redirect to dashboard or login
-      router.push('/login');
-    } catch (err: any) {
-      setError(err?.data?.error || err?.message || 'Signup failed');
+      const response = await signup({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      }).unwrap();
+
+      localStorage.setItem('auth_token', response.token);
+      localStorage.setItem('auth_user', JSON.stringify(response.user));
+      router.push('/');
+    } catch (error: unknown) {
+      const fallbackMessage = 'Signup failed. Please try again.';
+      if (typeof error === 'object' && error !== null && 'data' in error) {
+        const maybeData = (error as { data?: unknown }).data;
+        if (typeof maybeData === 'object' && maybeData !== null && 'error' in maybeData) {
+          const apiError = (maybeData as { error?: unknown }).error;
+          if (typeof apiError === 'string') {
+            setFormError(apiError);
+            return;
+          }
+        }
+      }
+      setFormError(fallbackMessage);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div>
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold bg-gradient-to-tr from-purple-600 to-cyan-400 shadow-xl">PG</div>
-          <h2 className="mt-6 text-3xl font-extrabold">Create your account</h2>
-          <p className="mt-3 text-slate-300">Sign up to manage your personal data. Everything you create is private to your account.</p>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(124,58,237,0.35),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(6,182,212,0.25),transparent_35%),radial-gradient(circle_at_50%_80%,rgba(59,130,246,0.15),transparent_45%)]" />
+      <main className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="space-y-8">
+          <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm backdrop-blur">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            <span>My Postgres Lab</span>
+          </div>
 
-          <div className="mt-6 glass p-4 rounded-2xl">
-            <div className="text-sm text-slate-200 font-semibold">Why sign up?</div>
-            <ul className="mt-2 text-slate-300 text-sm list-disc list-inside">
-              <li>Store your items and manage them.</li>
-              <li>Experiment with SQL and migrations safely.</li>
-              <li>Access Prisma Studio to inspect your data.</li>
+          <div className="space-y-4">
+            <h1 className="text-4xl font-black leading-tight sm:text-5xl">
+              Create your account and start building your own CRUD world.
+            </h1>
+            <p className="max-w-xl text-slate-300">
+              This app is your playground. Sign up, log in, and manage your own data while you learn PostgreSQL hands-on.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-wide text-slate-300">Auth</p>
+              <p className="mt-2 font-semibold">JWT + Argon2</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-wide text-slate-300">Database</p>
+              <p className="mt-2 font-semibold">Postgres + Prisma</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-wide text-slate-300">State</p>
+              <p className="mt-2 font-semibold">Redux Toolkit Query</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold">Sign Up</h2>
+            <p className="mt-1 text-sm text-slate-300">Use your account to create and manage personal records.</p>
+          </div>
+
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-200">Full Name</span>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/25"
+                placeholder="Krishna Agarwal"
+                autoComplete="name"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-200">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/25"
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-200">Password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/25"
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-200">Confirm Password</span>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/25"
+                placeholder="Repeat your password"
+                autoComplete="new-password"
+              />
+            </label>
+
+            <ul className="space-y-1 rounded-xl border border-white/10 bg-slate-900/30 p-3 text-xs text-slate-300">
+              <li className={passwordChecks.minLength ? 'text-emerald-300' : ''}>At least 8 characters</li>
+              <li className={passwordChecks.hasLetter ? 'text-emerald-300' : ''}>Contains a letter</li>
+              <li className={passwordChecks.hasNumber ? 'text-emerald-300' : ''}>Contains a number</li>
             </ul>
-          </div>
-        </div>
 
-        <form onSubmit={handleSubmit} className="glass p-8 rounded-2xl">
-          {error && <div className="mb-4 text-sm text-red-300">{error}</div>}
-          <label className="block text-sm font-medium">Full name</label>
-          <input className="mt-2 mb-4 w-full p-3 rounded-lg bg-transparent border border-white/5" value={name} onChange={(e)=>setName(e.target.value)} />
+            {formError ? (
+              <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{formError}</p>
+            ) : null}
 
-          <label className="block text-sm font-medium">Email</label>
-          <input type="email" className="mt-2 mb-4 w-full p-3 rounded-lg bg-transparent border border-white/5" value={email} onChange={(e)=>setEmail(e.target.value)} />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-500 to-cyan-400 px-5 py-3 font-semibold text-white shadow-lg shadow-fuchsia-500/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isLoading ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
 
-          <label className="block text-sm font-medium">Password</label>
-          <input type="password" className="mt-2 mb-4 w-full p-3 rounded-lg bg-transparent border border-white/5" value={password} onChange={(e)=>setPassword(e.target.value)} />
-
-          <label className="block text-sm font-medium">Confirm password</label>
-          <input type="password" className="mt-2 mb-6 w-full p-3 rounded-lg bg-transparent border border-white/5" value={confirm} onChange={(e)=>setConfirm(e.target.value)} />
-
-          <div className="flex items-center gap-3">
-            <button className="btn-primary" type="submit" disabled={isLoading}>{isLoading ? 'Creating…' : 'Create account'}</button>
-            <button type="button" className="btn-ghost" onClick={()=>router.push('/login')}>Already have an account</button>
-          </div>
-        </form>
-      </div>
+          <p className="mt-5 text-center text-sm text-slate-300">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-cyan-300 hover:text-cyan-200">
+              Sign in
+            </Link>
+          </p>
+        </section>
+      </main>
     </div>
   );
 }

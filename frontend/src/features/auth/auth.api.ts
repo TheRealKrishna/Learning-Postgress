@@ -1,37 +1,36 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-type SignupRequest = {
-  name: string;
-  email: string;
-  password: string;
-};
-
-type User = {
+export type AuthUser = {
   id: number;
   name: string;
   email: string;
   created_at: string;
 };
 
-type SignupResponse = {
-  token: string;
-  user: User;
+export type SignupRequest = {
+  name: string;
+  email: string;
+  password: string;
 };
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+export type AuthResponse = {
+  token: string;
+  user: AuthUser;
+};
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({ baseUrl }),
+  baseQuery: fetchBaseQuery({ baseUrl: apiBaseUrl }),
   endpoints: (builder) => ({
-    signup: builder.mutation<SignupResponse, SignupRequest>({
+    signup: builder.mutation<AuthResponse, SignupRequest>({
       query: (body) => ({
         url: '/auth/signup',
         method: 'POST',
         body,
       }),
     }),
-    // login and other endpoints can be added here
   }),
 });
 
