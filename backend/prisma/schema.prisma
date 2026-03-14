@@ -3,14 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  adapter = "pg"
 }
 
 datasource db {
   provider = "postgresql"
 }
-
-// Connection URL removed for Prisma v7+; use prisma.config.ts for migrate and
-// pass `adapter` or `accelerateUrl` to PrismaClient at runtime.
 
 model User {
   id        Int      @id @default(autoincrement())
