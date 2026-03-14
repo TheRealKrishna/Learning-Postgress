@@ -6,7 +6,10 @@ import { info, error } from './utils/logger';
 
 dotenv.config();
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 80;
+
+// Create the app instance for both local and serverless use
+const app = createApp();
 
 const startServer = async (): Promise<void> => {
   // perform early startup tasks (DB migrations, checks)
@@ -19,7 +22,6 @@ const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 
-  const app = createApp();
   const server = app.listen(PORT, () => {
     info(`Server listening on http://localhost:${PORT}`);
   });
@@ -44,9 +46,15 @@ const startServer = async (): Promise<void> => {
   process.on('SIGINT', () => shutdown('SIGINT'));
 };
 
-startServer().catch((err) => {
-  error('Failed to start server:', err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+// If running on Vercel (serverless), do not call listen — export the app instead.
+// Vercel will invoke the exported app as a handler. For local/dev, start the server.
+if (!process.env.VERCEL) {
+  startServer().catch((err) => {
+    error('Failed to start server:', err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+} else {
+  info('Running on Vercel serverless — not starting an HTTP listener.');
+}
 
-export default startServer;
+export default app;
