@@ -1,0 +1,21 @@
+// Prisma schema for migrating from raw Postgres to Prisma.
+// Set DATABASE_URL in your environment before running `prisma migrate` or `prisma generate`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
