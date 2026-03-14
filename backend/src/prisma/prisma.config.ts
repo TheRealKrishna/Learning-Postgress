@@ -1,15 +1,13 @@
 // Prisma configuration for migrate and client connection URLs.
-// This file should not be checked into source control with secrets.
+// Keep secrets in environment variables.
 
 const config = {
   migrate: {
-    // Migrate expects a connection URL here. Set DATABASE_URL in Vercel or your environment.
+    // Prisma Migrate reads the connection URL from this config in Prisma 7.
     url: process.env.DATABASE_URL,
   },
-  // Export client options for manual use when constructing PrismaClient in runtime code.
+  // Runtime app code can use either adapter (direct DB) or accelerateUrl.
   client: {
-    // For a direct DB connection provide `adapter`, e.g. { provider: 'postgresql', url: process.env.DATABASE_URL }
-    // For Prisma Accelerate provide `accelerateUrl` instead.
     adapter: process.env.DATABASE_URL ? { provider: 'postgresql', url: process.env.DATABASE_URL } : undefined,
     accelerateUrl: process.env.PRISMA_ACCELERATE_URL ?? undefined,
   },

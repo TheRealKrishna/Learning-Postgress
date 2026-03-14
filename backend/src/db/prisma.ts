@@ -1,18 +1,22 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import prismaConfig from '../prisma/prisma.config';
 
-// Build PrismaClient options using adapter or accelerateUrl per Prisma 7 guidance.
-const clientOptions: Record<string, unknown> = {};
+type PrismaClientOptions = ConstructorParameters<typeof PrismaClient>[0];
 
-if (prismaConfig?.client?.adapter?.url) {
-  // Provide the raw connection string as `datasourceUrl` for PrismaClient.
-  clientOptions.datasourceUrl = prismaConfig.client.adapter.url as string;
+const directUrl = prismaConfig?.client?.adapter?.url;
+const accelerateUrl = prismaConfig?.client?.accelerateUrl;
+
+let clientOptions: PrismaClientOptions | undefined;
+
+if (directUrl) {
+  const pool = new Pool({ connectionString: directUrl });
+  clientOptions = { adapter: new PrismaPg(pool) };
+} else if (accelerateUrl) {
+  clientOptions = { accelerateUrl };
 }
 
-if (prismaConfig?.client?.accelerateUrl) {
-  clientOptions.accelerateUrl = prismaConfig.client.accelerateUrl;
-}
-
-const prisma = new PrismaClient(clientOptions as Prisma.Subset<Prisma.PrismaClientOptions, Prisma.PrismaClientOptions>);
+const prisma = new PrismaClient(clientOptions);
 
 export default prisma;
